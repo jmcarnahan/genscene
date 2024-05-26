@@ -101,14 +101,18 @@ WSGI_APPLICATION = "conf.wsgi.application"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 # TODO: change the hard coded database settings to use the environment variables
 DATABASES = {
-    'default': {
-        "ENGINE": os.environ.get("STATE_DB_ENGINE", "Engine for the STATE db"),
-        "NAME": os.environ.get("STATE_DB_NAME", "Name for the STATE db"),
-        "USER": os.environ.get("STATE_DB_USER", "User for the STATE db"),
-        "PASSWORD": os.environ.get("STATE_DB_PASSWORD", "Password for the STATE db"),
-        "HOST": os.environ.get("STATE_DB_HOST", "Host for the STATE db"),
-        "PORT": os.environ.get("STATE_DB_PORT", "Port for the STATE db"),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": ".statedb",
     },
+    # 'default': {
+    #     "ENGINE": os.environ.get("STATE_DB_ENGINE", "Engine for the STATE db"),
+    #     "NAME": os.environ.get("STATE_DB_NAME", "Name for the STATE db"),
+    #     "USER": os.environ.get("STATE_DB_USER", "User for the STATE db"),
+    #     "PASSWORD": os.environ.get("STATE_DB_PASSWORD", "Password for the STATE db"),
+    #     "HOST": os.environ.get("STATE_DB_HOST", "Host for the STATE db"),
+    #     "PORT": os.environ.get("STATE_DB_PORT", "Port for the STATE db"),
+    # },
     # 'database_db': {
     #     "ENGINE": os.environ.get("DATABASE_DB_ENGINE", "Engine for the Database Example db"),
     #     "NAME": os.environ.get("DATABASE_DB_NAME", "Name for the Database Example db"),

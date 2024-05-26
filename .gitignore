@@ -1,4 +1,6 @@
 backend/.data
+backend/.env
+backend/.statedb
 .DS_Store
 **/.DS_Store/
 **/.vscode/
