@@ -1,0 +1,153 @@
+
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+  
+html, body {
+    width: 100%;
+    height: 100%; 
+}
+  
+.sidebar-select-container {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    align-items: left; /* Center children horizontally */
+    justify-content: center; /* Center children vertically */
+    height: 100px; /* Adjust based on your needs */
+    background-color: white; /* Example background color */
+    padding: 10px; /* Padding around the content */
+}
+
+.header-text {
+    margin-bottom: 20px; /* Space between the header text and the select box */
+    font-size: 12px; /* Example font size */
+    color: black;
+    align-items: center;
+    display: flex;
+}
+
+.sidebar-select {
+    background-color: darkgray;
+    padding: 8px 16px; /* Add some padding for aesthetics */
+    color: black; /* Text color */
+    border: 1px solid darkgray; /* A light border */
+    border-radius: 4px; /* Rounded corners */
+    outline: none; /* Remove the default focus outline */
+}
+
+.sidebar-instruct-container {
+    display: flex;
+    flex-direction: column; /* Stack children vertically */
+    align-items: left; /* Center children horizontally */
+    justify-content: center; /* Center children vertically */
+    background-color: #222233; /* Example background color */
+    padding: 10px; /* Padding around the content */
+}
+
+.custom-textarea {
+    padding: 8px 16px;
+    font-size: 12px;
+    background-color: #111122; /* Dark gray background */
+    color: white; /* White text color for better contrast */
+    border: 1px solid #111122; /* A light border */
+    border-radius: 4px; /* Rounded corners */
+    outline: none; /* Remove the default focus outline */
+}
+
+.custom-textarea:focus {
+    background-color: #111122; /* Same as the default state */
+    color: white; 
+    /* Optionally, reset or set specific styles for the focus state */
+    outline: none; /* Removes the outline. Use cautiously. */
+}
+
+  /* Targets the scrollbar itself */
+textarea::-webkit-scrollbar {
+    width: 6px; /* width of the entire scrollbar */
+}
+
+/* Targets the background of the scrollbar track */
+textarea::-webkit-scrollbar-track {
+    background: #111122; /* light grey background */
+}
+
+/* Targets the draggable scrolling handle */
+textarea::-webkit-scrollbar-thumb {
+    background: #888; /* dark grey */
+    border-radius: 6px; /* rounded edges */
+}
+
+/* Optional: Change the scrollbar-thumb color on hover */
+textarea::-webkit-scrollbar-thumb:hover {
+    background: #555; /* darker grey on hover */
+}
+
+.instruct-submit-button {
+    background-color: #111122; /* Green background */
+    border-color: #111122; /* Needed to match the border with the background */
+  }
+  
+/* To change the background color on hover */
+.instruct-submit-button:hover {
+    background-color: #111144;
+    border-color: #111144;
+}
+
+
+
+.sidebar-thread {
+    font-size: 12px;
+    background-color: lightgray;
+    color: black; /* Light text color for contrast */
+    border: 1px solid #2a2a40; /* Slightly lighter border for definition */
+  }
+  
+  .sidebar-thread:hover,
+  .sidebar-thread:focus { /* Apply the same styles for hover and focus */
+    background-color: lightgray; /* Lighter background on hover for visual feedback */
+    color: black;
+    cursor: pointer;
+    outline: none; /* Remove the default focus outline if desired */
+  }
+  
+  /* Bootstrap active class override for when an item is clicked (active) */
+  .list-group-item.active.sidebar-thread,
+  .list-group-item.active.sidebar-thread:hover,
+  .list-group-item.active.sidebar-thread:focus { /* Ensure focus state on active items matches */
+    background-color: darkgray; /* Distinct background color for active state */
+    border-color: darkgray;
+    color: black; /* Ensure text color contrasts well with active background */
+    outline: none; /* Optionally remove the focus outline */
+  }
+
+  /* .sidebar-thread {
+    padding: 8px 16px;
+    font-size: 12px;
+    background-color: #111122; 
+    color: white; 
+    border: 1px solid #111122; 
+    border-radius: 4px; 
+    outline: none; 
+}
+
+.sidebar-thread:hover {
+    padding: 8px 16px;
+    font-size: 12px;
+    background-color: #111122; 
+    color: white; 
+    border: 1px solid #222233; 
+    border-radius: 4px; 
+    outline: none; 
+} */
+
+.new-thread-button {
+    cursor: pointer;
+    color: black;
+    font-size: 24px;
+    font-weight: bold;
+    background: none;
+    border: none;
+    padding: 0;
+  }

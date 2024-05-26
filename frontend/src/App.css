@@ -1,0 +1,65 @@
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: #111122;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+.app-container {
+  display: flex;
+  height: 100vh; /* Adjust based on your layout needs */
+}
+
+.sidebar-container {
+  width: 250px; /* Adjust based on your preference */
+  background-color: white; /* #222233 Sidebar background color */
+  color: black; /* Text color for the sidebar */
+  padding: 20px; /* Padding around sidebar content */
+  height: 100%; /* Make sidebar full height */
+}
+
+.content-container {
+  flex-grow: 1; /* Allows the content area to take up the remaining space */
+  padding: 20px; /* Padding around content */
+  background-color: white; /* Background color for the content area */
+}
+
+.resizer {
+  width: 5px; /* Resizer width */
+  cursor: ew-resize; /* Cursor indicates resizable area */
+  background-color: white; /* Resizer color */
+  height: 100%; /* Full container height */
+}

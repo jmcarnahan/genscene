@@ -1,0 +1,26 @@
+version: '3'
+name: 'genscene-api'
+
+x-default-env: &load-env-file
+  env_file:
+  - .env
+
+services:
+  mysql:
+    <<: *load-env-file
+    hostname: mysql
+    container_name: mysql
+    image: mysql:latest
+    cap_add:
+      - SYS_NICE
+    restart: always
+    environment:
+      - MYSQL_DATABASE=init_db
+      - MYSQL_ROOT_PASSWORD=123456
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./.data/myql:/var/lib/mysql
+      - ./init/init_state_db.sql:/docker-entrypoint-initdb.d/init_state_db.sql
+
+

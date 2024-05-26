@@ -1,0 +1,34 @@
+/* body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+} */
+
+/* Global styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  background-color: white; /* Set a light gray #222222 background for the whole page */
+  color: black; /* Dark gray color for text for better readability */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif; /* Optional: Set a default font family */
+}
+
+/* Other elements might need adjustments to fit into the theme */
+a, button {
+  color: #007bff; /* Adjust link and button colors if necessary */
+}
+
+/* Continue with specific styles for components like your Chatbot */
+.chatbot-container, .chat-window, .message, .user-message, .bot-message {
+  /* Your chat component styles */
+}
