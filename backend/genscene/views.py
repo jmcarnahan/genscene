@@ -122,7 +122,6 @@ class ChatView (generics.CreateAPIView):
         response['X-Accel-Buffering'] = 'no'
         response["thread_id"] = user_thread.thread_id
         response["actor"] = actor_name
-        LOGGER.info('Returning stream content')
         return response
 
         # response = actor.get_responses(input=input, user_thread=user_thread)
