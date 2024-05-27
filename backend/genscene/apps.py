@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.conf import settings
 from .home_actor import HomeActor
+from .database_actor import DatabaseActor
 # from .database_actor import DatabaseActor
 from .actor import Actor
 from typing import List
@@ -22,8 +23,8 @@ class GensceneConfig(AppConfig):
 
         # should do this dynamically
         self.actors = {}
-        actor_classes = [HomeActor]
-        # actor_classes = [HomeActor, DatabaseActor]
+        # actor_classes = [HomeActor]
+        actor_classes = [HomeActor, DatabaseActor]
         for actor_class in actor_classes:
             actor = actor_class(self.client, self.deployment)
             self.actors[actor.get_name()] = actor
