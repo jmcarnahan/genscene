@@ -52,7 +52,7 @@ compose file that will create a database of people. This docker file
 will run the 'init_sample_db.sql'. If you use this sample database use
 the username and password in the 'init_sample_db.sql'
 ```
-docker compose up
+> docker compose up
 ```
 
 
