@@ -5,8 +5,7 @@ import os
 import io
 from typing import Dict, Any, List
 import re
-sys.path.append("..")
-from genscene.actor import Actor
+from ..actor import Actor
 import json
 import logging
 import yaml
@@ -60,12 +59,10 @@ run against the database. You will need to follow these steps:
         return "An example tool to interact with your database using natural language"
 
     def get_code_resource_files(self) -> Dict[str, io.BytesIO]:
-        table_names = ["people"]
         try:
             metadata = MetaData()
             metadata.reflect(bind=self.engine)
-            for table_name in table_names:
-                table = metadata.tables[table_name]
+            for table_name, table in metadata.tables.items():
                 schema = {
                     'tables': {
                         table_name: {
@@ -97,13 +94,6 @@ run against the database. You will need to follow these steps:
             LOGGER.error(f"DatabaseActor: error executing sql query: {sql_query}")
             traceback.print_exc()
             return '{}'
-
-        # current_dir = os.path.dirname(os.path.abspath(__file__))
-        # file_path = os.path.join(current_dir, 'people_schema.yaml')
-        # LOGGER.info(f"DatabaseActor: reading schema file: {file_path}")
-        # with open(file_path, 'rb') as file:
-        #     schema = file.read()
-        # return {'database schema': io.BytesIO(schema)}
     
     # overriden
     def get_tools(self) -> List[Any]:

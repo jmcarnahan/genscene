@@ -1,4 +1,4 @@
-from .actor import Actor
+from ..actor import Actor
 import io
 from typing import Dict, Any, List
 
