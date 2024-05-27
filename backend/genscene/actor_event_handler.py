@@ -52,7 +52,7 @@ class ActorEventHandler(AssistantEventHandler):
 
     @override
     def on_image_file_done(self, image_file: ImageFile) -> None:
-        print(f"on_image_file_done: {image_file.file_id}")
+        LOGGER.info(f"on_image_file_done: {image_file.file_id}")
         item = ReturnItem.from_image_file(type='image_file', 
                                           role="assistant", 
                                           openai_client=self.openai_client, 
@@ -102,6 +102,6 @@ class ActorEventHandler(AssistantEventHandler):
           else:
               LOGGER.error(f"Unhandled tool call type: {tool_call.type}")
         else:
-            LOGGER.info(f"Run status is not requires_action: {current_run.status}")
+            LOGGER.debug(f"Run status is not requires_action: {current_run.status}")
 
 
