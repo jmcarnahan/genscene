@@ -9,7 +9,8 @@ sys.path.append("..")
 from genscene.actor import Actor
 import json
 import logging
-from sqlalchemy import create_engine, text, exc
+import yaml
+from sqlalchemy import create_engine, text, MetaData, Table
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,12 +40,18 @@ class DatabaseActor(Actor):
 
     # overriden
     def get_instructions(self):
-        return '''You are a database assistant that will answer questions using schema information stored in YAML format. This schema file will be associated with the assistant. You will be asked a question and you will need to retrieve the result set from a sql query run against the database. You will need to follow these steps:
+        return '''You are a database assistant that will answer questions using schema file in JSON format. 
+This schema file will be associated with the assistant. The database is MySQL and the schema file will contain
+information about the tables and columns in the database. You will use the function 'execute_sql_query' to
+retrieve the result set from a sql query run against the database.
+
+You will be asked a question and you will need to retrieve the result set from a sql query 
+run against the database. You will need to follow these steps:
+
 1. Read the question and determine the sql query that needs to be run using the schema information in the assistant file
 2. Execute the sql query and retrieve the result set using the function 'execute_sql_query' and passing in the sql query.
 3. Display the result set to the user after translating it into a human readable format.
 
-answer as a pirate
 '''
     
     # overriden
@@ -53,12 +60,50 @@ answer as a pirate
         return "An example tool to interact with your database using natural language"
 
     def get_code_resource_files(self) -> Dict[str, io.BytesIO]:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_dir, 'people_schema.yaml')
-        LOGGER.info(f"DatabaseActor: reading schema file: {file_path}")
-        with open(file_path, 'rb') as file:
-            schema = file.read()
-        return {'database schema': io.BytesIO(schema)}
+        table_names = ["people"]
+        try:
+            metadata = MetaData()
+            metadata.reflect(bind=self.engine)
+            for table_name in table_names:
+                table = metadata.tables[table_name]
+                schema = {
+                    'tables': {
+                        table_name: {
+                            'columns': []
+                        }
+                    }
+                }
+                for column in table.columns:
+                    column_type = str(column.type)
+                    if any(key in column_type for key in ['VARCHAR', 'ENUM', 'TEXT']):
+                        column_type = 'string'
+                    elif any(key in column_type for key in ['INT', 'FLOAT', 'DECIMAL']):
+                        column_type = 'number'
+                    elif any(key in column_type for key in ['DATETIME', 'DATE', 'TIMESTAMP']):
+                        column_type = 'datetime'
+                    col_info = {
+                        'name': column.name,
+                        'type': column_type,
+                    }
+                    schema['tables'][table_name]['columns'].append(col_info)
+
+            LOGGER.debug(f"DatabaseActor: generated schema: {schema}")
+            table_json = json.dumps(schema, default=str)
+            bytes_buffer = io.BytesIO(table_json.encode('utf-8'))
+            bytes_buffer.seek(0)
+            return {'database schema': bytes_buffer}  
+
+        except Exception as e:
+            LOGGER.error(f"DatabaseActor: error executing sql query: {sql_query}")
+            traceback.print_exc()
+            return '{}'
+
+        # current_dir = os.path.dirname(os.path.abspath(__file__))
+        # file_path = os.path.join(current_dir, 'people_schema.yaml')
+        # LOGGER.info(f"DatabaseActor: reading schema file: {file_path}")
+        # with open(file_path, 'rb') as file:
+        #     schema = file.read()
+        # return {'database schema': io.BytesIO(schema)}
     
     # overriden
     def get_tools(self) -> List[Any]:
