@@ -15,6 +15,7 @@ from openai import OpenAI, AssistantEventHandler
 from queue import Queue
 import logging
 import threading
+import hashlib
 
 LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ class Actor(ABC):
     openai_client: OpenAI
     openai_model: str
     asst_lock = threading.Lock()
+    file_lock = threading.Lock()
 
     def __init__(self, openai_client, openai_model ) -> None:
         self.openai_client = openai_client
@@ -44,47 +46,96 @@ class Actor(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_assistant_files(self) -> Dict[str, io.BytesIO]:
-        raise NotImplementedError
-
-    @abstractmethod
     def get_description(self) -> str:
         raise NotImplementedError
-
+    
     @abstractmethod
-    def get_tools_list(self) -> List[Any]:
+    def get_instructions(self) -> str:
+        raise NotImplementedError
+    
+    @abstractmethod
+    def get_tools(self) -> List[Any]:
         raise NotImplementedError
 
-    @abstractmethod
-    def get_instructions(self, user_id) -> str:
-        raise NotImplementedError
-
+    def get_code_resource_files(self) -> Dict[str, io.BytesIO]:
+        return {}
+    
     def get_openai_client(self):
         return self.openai_client
+    
+    def hash_value (self, value: str | bytes) -> int:
+        hash_object = hashlib.sha256()
+        if isinstance(value, str):
+            hash_object.update(value.encode())
+        elif isinstance(value, bytes):
+            hash_object.update(value)
+        else:
+            raise ValueError("Value must be a string or bytes")
+        hex_digest = hash_object.hexdigest()
+        return str(int(hex_digest, 16))
 
-    # get the files for this actor and user
-    # try to get the file ids from the django default database
-    def get_file_ids(self):
-
+    # TODO: support non code files later
+    def get_tools_resources(self) -> Dict[str, Any]:
         from .models import File
+        self.file_lock.acquire()
+        try:
+            
+            code_files: Dict[str: io.BytesIO] = self.get_code_resource_files()
+
+            new_file_hashes  = {name: self.hash_value(value=file_bytes.getvalue()) 
+                                for name, file_bytes in code_files.items()}
+
+            curr_files = {file.name: file 
+                          for file in File.objects.filter(actor_name=self.get_name())}
+
+            # this will add or update the file in the database
+            file_ids = []
+            for name, hash in new_file_hashes.items():
+                if name not in curr_files or curr_files[name].hash != hash:
+
+                    # delete old file id 
+                    if name in curr_files:
+                        self.openai_client.files.delete(curr_files[name].file_id)
+                        file.delete()
+
+                    # create new file id
+                    assistant_file = self.openai_client.files.create(
+                        file=(name, code_files[name].getvalue(),),
+                        purpose="assistants",
+                    )
+
+                    # create or update the file in the database
+                    db_file, created = File.objects.get_or_create(
+                        actor_name=self.get_name(),
+                        name=name,
+                        defaults={
+                            'file_id': assistant_file.id,
+                            'hash': hash
+                        }
+                    )
+
+                    file_ids.append(db_file.file_id)
+
+                else:
+                    file_ids.append(curr_files[name].file_id)
+
+            # need to delete any files that are not in the new list
+            for name, file in curr_files.items():
+                if name not in new_file_hashes:
+                    self.openai_client.files.delete(file.file_id)
+                    file.delete()
+
+            file_ids.sort()
+            return {
+                "code_interpreter": {
+                    "file_ids": file_ids
+                }
+            }
         
-        file_ids = [file.file_id for file in File.objects.filter(actor_name=self.get_name())]
-        if (len(file_ids) == 0):
-            for name, file_bytes in self.get_assistant_files().items():
-                assistant_file = self.openai_client.files.create(
-                    file=(name, file_bytes,),
-                    purpose="assistants",
-                )
-                file = File.objects.create(
-                    file_id=assistant_file.id,
-                    actor_name=self.get_name(),
-                )
-                file_ids.append(file.file_id)
-                LOGGER.info(f"Actor[{self.get_name()}] created file in openai: {file.file_id}") 
-        else: 
-            # print(f"State: actor[{actor_name}] user[{self.user_id}]: got file IDs from db") 
-            pass
-        return file_ids    
+        except Exception as e:
+            raise Exception(e)
+        finally:
+            self.file_lock.release()
 
 
     # try to get the assistant id from the django default database
@@ -92,27 +143,48 @@ class Actor(ABC):
         from .models import Assistant
         self.asst_lock.acquire()
         try:
+
+            instructions = self.get_instructions()
+            description = self.get_description()
+            tools = self.get_tools()
+            tools_resources = self.get_tools_resources()
+            hash = self.hash_value(value=f"{instructions}{description}{tools}{tools_resources}")
+            LOGGER.debug(f"Actor[{self.get_name()}] hash: {hash}") 
+            LOGGER.debug(f"Actor[{self.get_name()}] tools resources: {tools_resources}")
+
             db_assistant, created = Assistant.objects.get_or_create(
                 actor_name=self.get_name(),
                 defaults={
                     'instructions': self.get_instructions(),
                     'description': self.get_description(),
-                    'assistant_id': None
+                    'hash': hash,
+                    'assistant_id': None,
                 }
             )
             if created:
                 openai_assistant = self.openai_client.beta.assistants.create(
                     name=f"{self.get_name().title()} Assistant",
-                    instructions=self.get_instructions(),
-                    tools=self.get_tools_list(),
-                    #file_ids=self.get_file_ids(),
+                    instructions=instructions,
+                    tools=tools,
+                    tool_resources=tools_resources,
                     model=self.openai_model,
                 )
                 db_assistant.assistant_id = openai_assistant.id
                 db_assistant.save()
-                LOGGER.info(f"Actor[{self.get_name()}] created assistant in openai: {db_assistant.assistant_id}")
+                LOGGER.info(f"Actor[{self.get_name()}] created new assistant in openai: {db_assistant.assistant_id}")
             else:
-                LOGGER.debug(f"Actor[{self.get_name()}] using existing assistant: {db_assistant.assistant_id}")
+                if db_assistant.hash != hash:
+                    self.openai_client.beta.assistants.update(
+                        assistant_id=db_assistant.assistant_id,
+                        name=f"{self.get_name().title()} Assistant",
+                        instructions=instructions,
+                        tools=tools,
+                        tool_resources=tools_resources,
+                        model=self.openai_model,
+                    )                        
+                    LOGGER.info(f"Actor[{self.get_name()}] updated assistant in openai: {db_assistant.assistant_id}")
+                else:
+                    LOGGER.info(f"Actor[{self.get_name()}] using existing assistant: {db_assistant.assistant_id}")
             return db_assistant.assistant_id
         except Exception as e:
             raise Exception(e)
@@ -124,7 +196,8 @@ class Actor(ABC):
         return self
 
     def delete (self):
-        with transaction.atomic():
+        self.asst_lock.acquire()
+        try:
             from .models import Assistant
             assistant_id = self.get_assistant_id()
             existing_asst = Assistant.objects.select_for_update().filter(
@@ -133,39 +206,21 @@ class Actor(ABC):
             if existing_asst.exists():
                 self.openai_client.beta.assistants.delete(assistant_id)
                 existing_asst.delete()
+
+                # delete all files associated with this actor
+                from .models import File
+                files = File.objects.filter(actor_name=self.get_name())
+                for file in files:
+                    self.openai_client.files.delete(file.file_id)
+                    file.delete()
+
                 return True
             else:
-                raise Exception(f"Assistant: could not delete assistant")        
-
-    # Get databse schema by reaching out to the database directly
-    # return as a byte buffer of YAML format of schema
-    # def get_schema_data (self, db_name):
-    #     meta_buffer = 'tables:\n'
-    #     conn = connections[db_name]
-    #     with conn.cursor() as cursor:
-    #         table_info = conn.introspection.get_table_list(cursor)
-    #         table_names = [info.name for info in table_info]
-    #         for table_name in table_names:
-    #             meta_buffer += f"  - name: {table_name}\n"
-    #             meta_buffer += "    columns:\n"
-    #             fields = conn.introspection.get_table_description(cursor, table_name)
-    #             for field in fields:
-    #                 meta_buffer += f"      - name: {field.name}\n"
-    #                 meta_buffer += f"        type: {field.data_type}\n"
-    #     # print(f"meta data from database[{db_name}]:\n{meta_buffer}")
-    #     bytes_buffer = io.BytesIO(meta_buffer.encode('utf-8'))
-    #     bytes_buffer.seek(0)
-    #     return bytes_buffer   
-
-    # # return as a byte buffer of file defined by path
-    # def get_file_data (self, file_path):     
-    #     with open(file_path, 'r', encoding='utf-8') as file:
-    #         file_content = file.read()
-    #         # print(f"read in file[{file_path}]:\n{file_content}")
-    #         file_content_bytes = file_content.encode('utf-8')
-    #         bytes_buffer = io.BytesIO(file_content_bytes)
-    #         bytes_buffer.seek(0) 
-    #         return bytes_buffer
+                raise Exception(f"Assistant: could not delete assistant")    
+        except Exception as e:
+            raise Exception(e)
+        finally:
+            self.asst_lock.release()    
 
 
     def _create_message (self, input, user_thread):
@@ -270,20 +325,4 @@ class Actor(ABC):
     #         print(f"Actor ERROR: wait for run: {e}: {run}")
     #         return [{'value': 'Sorry, I cannot answer that question', 'role': 'error'}]
 
-    # def get_instructions(self, user_state):
-    #     return user_state.get_instructions(actor_name=self.get_name())
 
-    # def set_instructions(self, user_state, instructions):
-    #     config = proj_apps.get_app_config('genscene')
-    #     assistant_id = user_state.get_assistant_id(actor_name=self.get_name())
-    #     # update the assistant
-    #     config.client.beta.assistants.update(
-    #         assistant_id=assistant_id, instructions=instructions
-    #     )
-    #     # update the database
-    #     from .models import Assistant
-    #     Assistant.objects.filter(assistant_id=assistant_id).update(instructions=instructions)
-    #     # update this user state
-    #     user_state.set_instructions(actor_name=self.get_name(), 
-    #                                 instructions=instructions)
-    #     print(f"Config: actor[{self.get_name()}] assistant[{assistant_id}]: updated instructions")

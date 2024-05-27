@@ -16,13 +16,16 @@ class Assistant(models.Model):
     assistant_id = models.CharField(max_length=200, null=True)
     instructions = models.CharField(max_length=10000)
     description  = models.CharField(max_length=1000)
+    hash         = models.TextField()
     
     def __str__(self):
         return "assistant"
 
 class File(models.Model):
     actor_name  = models.CharField(max_length=200)
-    file_id     = models.CharField(max_length=200)
+    name        = models.CharField(max_length=200)
+    file_id     = models.CharField(max_length=200, null=True)
+    hash        = models.TextField()
 
     def __str__(self):
         return "file"
