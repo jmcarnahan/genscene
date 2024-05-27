@@ -20,9 +20,6 @@ import hashlib
 LOGGER = logging.getLogger(__name__)
 
 
-
-
-
 #
 # Abstract Actor
 #
@@ -96,7 +93,7 @@ class Actor(ABC):
                     # delete old file id 
                     if name in curr_files:
                         self.openai_client.files.delete(curr_files[name].file_id)
-                        file.delete()
+                        curr_files[name].delete()
 
                     # create new file id
                     assistant_file = self.openai_client.files.create(
@@ -181,10 +178,12 @@ class Actor(ABC):
                         tools=tools,
                         tool_resources=tools_resources,
                         model=self.openai_model,
-                    )                        
+                    ) 
+                    db_assistant.hash = hash
+                    db_assistant.save()                       
                     LOGGER.info(f"Actor[{self.get_name()}] updated assistant in openai: {db_assistant.assistant_id}")
                 else:
-                    LOGGER.info(f"Actor[{self.get_name()}] using existing assistant: {db_assistant.assistant_id}")
+                    LOGGER.debug(f"Actor[{self.get_name()}] using existing assistant: {db_assistant.assistant_id}")
             return db_assistant.assistant_id
         except Exception as e:
             raise Exception(e)
